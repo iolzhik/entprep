@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String   @map("password_hash")
+  xp           Int      @default(0)
+  level        Int      @default(1)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  userAnswers UserAnswer[]
+  userBadges  UserBadge[]
+  aiChats     AiChat[]
+
+  @@map("users")
+}
+
+model Subject {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+  icon        String
+  color       String @default("#3b82f6")
+
+  // Relations
+  questions Question[]
+
+  @@map("subjects")
+}
+
+model Question {
+  id             String   @id @default(cuid())
+  subjectId      String   @map("subject_id")
+  questionText   String   @map("question_text")
+  options        Json     // Array of strings
+  correctOption  Int      @map("correct_option") // Index of correct option
+  explanation    String?
+  difficulty     String   @default("medium") // easy, medium, hard
+  topic          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  subject     Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  userAnswers UserAnswer[]
+
+  @@map("questions")
+}
+
+model UserAnswer {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  questionId String   @map("question_id")
+  isCorrect  Boolean  @map("is_correct")
+  timeSpent  Int?     @map("time_spent") // in seconds
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@map("user_answers")
+}
+
+model Badge {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+  xpRequired  Int    @map("xp_required")
+  icon        String
+  color       String @default("#f59e0b")
+  category    String @default("general") // general, subject, achievement
+
+  // Relations
+  userBadges UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id       String   @id @default(cuid())
+  userId   String   @map("user_id")
+  badgeId  String   @map("badge_id")
+  earnedAt DateTime @default(now()) @map("earned_at")
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model AiChat {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  subject   String?
+  question  String
+  answer    String
+  isFavorite Boolean @default(false) @map("is_favorite")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_chats")
+}
