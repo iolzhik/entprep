@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-async function main() {
+export async function seedDatabase() {
   console.log('🌱 Начинаем заполнение базы данных...')
 
   // Создаем предметы
@@ -220,12 +220,18 @@ async function main() {
   console.log('🎉 База данных успешно заполнена!')
 }
 
-main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
-  .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
+// Export for use in other scripts
+export { seedDatabase }
+
+// Run directly if this file is executed
+if (require.main === module) {
+  seedDatabase()
+    .then(async () => {
+      await prisma.$disconnect()
+    })
+    .catch(async (e) => {
+      console.error(e)
+      await prisma.$disconnect()
+      process.exit(1)
+    })
+}
